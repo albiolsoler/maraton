@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Maratón 22N">
+<title>Maratón San Sebastián</title>
+<style>
+:root{--bg:#f5f4f0;--card:#fff;--border:#e5e3dc;--text:#1a1a18;--muted:#888;--blue:#185FA5;--green:#1D9E75;--purple:#534AB7;--amber:#BA7517;--radius:14px;--radius-sm:10px}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;background:var(--bg);color:var(--text);font-size:16px;min-height:100vh;padding-bottom:90px}
+.topbar{background:var(--card);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.topbar-left h1{font-size:17px;font-weight:700}
+.topbar-left p{font-size:12px;color:var(--muted);margin-top:1px}
+.countdown-box{text-align:right}
+.countdown-num{font-size:24px;font-weight:700;color:var(--blue);line-height:1}
+.countdown-label{font-size:11px;color:var(--muted)}
+.bottomnav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);display:flex;z-index:50;padding-bottom:env(safe-area-inset-bottom)}
+.bnav-btn{flex:1;padding:10px 4px 8px;border:none;background:none;font-family:inherit;font-size:11px;color:var(--muted);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px}
+.bnav-btn.active{color:var(--blue)}
+.bnav-icon{font-size:22px;line-height:1}
+.view{display:none;padding:12px 14px}
+.view.active{display:block}
+.week-scroll{display:flex;gap:8px;overflow-x:auto;padding:4px 0 12px;scrollbar-width:none}
+.week-scroll::-webkit-scrollbar{display:none}
+.week-pill{flex-shrink:0;background:var(--card);border:1.5px solid var(--border);border-radius:50px;padding:7px 14px;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;color:var(--muted)}
+.week-pill.active{background:var(--blue);border-color:var(--blue);color:#fff}
+.week-pill.done{border-color:var(--green);color:var(--green)}
+.week-info{background:var(--card);border-radius:var(--radius);padding:14px 16px;margin-bottom:12px;border:1px solid var(--border)}
+.week-info-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px}
+.week-info-title{font-size:19px;font-weight:700}
+.week-info-meta{font-size:13px;color:var(--muted);margin-top:2px}
+.badge{display:inline-block;font-size:11px;font-weight:600;padding:3px 9px;border-radius:50px}
+.b-r{background:#d4f0e4;color:#0f6e56}.b-b{background:#d0e8f8;color:#0c447c}.b-d{background:#e8e7fd;color:#3C3489}.b-e{background:#faeeda;color:#633806}.b-t{background:#fff3cd;color:#856404}.b-x{background:#e9e8e4;color:#5F5E5A}
+.week-progress{margin-top:10px}
+.prog-row{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:4px}
+.prog-bar{height:5px;background:var(--border);border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;background:var(--green);border-radius:3px;transition:width .4s}
+.week-note{font-size:13px;color:#666;line-height:1.5;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.day-card{background:var(--card);border-radius:var(--radius);margin-bottom:10px;border:1.5px solid var(--border);overflow:hidden}
+.day-card.done-card{border-color:var(--green)}
+.day-head{display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer}
+.day-head:active{background:#f5f4f0}
+.day-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.dot-run{background:var(--blue)}.dot-quality{background:var(--purple)}.dot-long{background:var(--amber)}.dot-rest{background:#ccc}
+.day-text{flex:1;min-width:0}
+.day-dow{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.day-title{font-size:15px;font-weight:700;margin:2px 0}
+.day-desc{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.day-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+.day-preview{font-size:11px;color:var(--muted);text-align:right;line-height:1.4}
+.check-btn{width:32px;height:32px;border-radius:50%;border:2px solid var(--border);background:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;flex-shrink:0}
+.check-btn.done{background:var(--green);border-color:var(--green);color:#fff}
+.day-body{display:none;padding:14px 16px;border-top:1px solid var(--border);background:#fafaf8}
+.day-body.open{display:block}
+.day-nota{font-size:13px;color:#555;line-height:1.6;background:#fff;border-left:3px solid var(--border);padding:10px 12px;border-radius:0 8px 8px 0;margin-bottom:14px}
+.log-section{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.log-field label{display:block;font-size:12px;color:var(--muted);font-weight:600;margin-bottom:5px}
+.log-field input{width:100%;font-size:16px;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:#fff;color:var(--text);font-family:inherit}
+.log-field input:focus{outline:none;border-color:var(--blue)}
+.log-field.full{grid-column:1/-1}
+.notes-field{margin-bottom:14px}
+.notes-field label{display:block;font-size:12px;color:var(--muted);font-weight:600;margin-bottom:5px}
+.notes-field textarea{width:100%;font-size:15px;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:#fff;color:var(--text);font-family:inherit;line-height:1.5;min-height:70px;resize:none}
+.notes-field textarea:focus{outline:none;border-color:var(--blue)}
+.btn-guardar{width:100%;padding:14px;background:var(--green);color:#fff;border:none;border-radius:var(--radius-sm);font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:4px}
+.btn-guardar.saved{background:#e8f8f1;color:var(--green);border:1.5px solid var(--green)}
+.log-resumen{font-size:13px;color:var(--green);background:#e8f8f1;border-radius:var(--radius-sm);padding:10px 12px;margin-top:10px;line-height:1.5}
+.global-card{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:12px;border:1px solid var(--border)}
+.global-card h2{font-size:17px;font-weight:700;margin-bottom:12px}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.stat-box{background:var(--bg);border-radius:var(--radius-sm);padding:12px}
+.stat-box .lbl{font-size:12px;color:var(--muted);font-weight:500}
+.stat-box .val{font-size:26px;font-weight:700;margin-top:2px}
+.all-weeks{display:flex;flex-direction:column;gap:6px;margin-top:14px}
+.aw-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg);border-radius:var(--radius-sm);cursor:pointer}
+.aw-num{font-size:12px;color:var(--muted);min-width:60px;font-weight:500}
+.aw-name{flex:1;font-size:13px;font-weight:600}
+.ph-bar{height:4px;background:var(--border);border-radius:2px;overflow:hidden;width:60px;flex-shrink:0}
+.ph-fill{height:100%;background:var(--green);border-radius:2px}
+.aw-check{font-size:13px;color:var(--green)}
+
+/* DRIVE STATUS */
+.drive-bar{background:var(--card);border-bottom:1px solid var(--border);padding:8px 16px;display:flex;align-items:center;justify-content:space-between;font-size:12px}
+.drive-status{display:flex;align-items:center;gap:6px;color:var(--muted)}
+.drive-dot{width:7px;height:7px;border-radius:50%;background:#ccc;flex-shrink:0}
+.drive-dot.connected{background:var(--green)}
+.drive-dot.syncing{background:var(--amber);animation:pulse 1s infinite}
+.drive-dot.error{background:#e53}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.btn-connect{background:var(--blue);color:#fff;border:none;border-radius:50px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
+.btn-connect.disconnect{background:transparent;color:var(--muted);border:1px solid var(--border)}
+
+/* SIGNIN OVERLAY */
+.signin-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px}
+.signin-card{background:#fff;border-radius:var(--radius);padding:24px;max-width:320px;width:100%;text-align:center}
+.signin-card h2{font-size:19px;font-weight:700;margin-bottom:8px}
+.signin-card p{font-size:14px;color:var(--muted);line-height:1.5;margin-bottom:20px}
+.btn-google{width:100%;padding:14px;background:#fff;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:10px}
+.btn-google:active{background:#f5f4f0}
+.btn-skip{width:100%;padding:12px;background:transparent;border:none;font-size:14px;color:var(--muted);cursor:pointer;font-family:inherit;margin-top:8px}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <h1>Maratón San Sebastián</h1>
+    <p>22 noviembre 2026 · 22 semanas</p>
+  </div>
+  <div class="countdown-box">
+    <div class="countdown-num" id="cdnum">—</div>
+    <div class="countdown-label">días</div>
+  </div>
+</div>
+
+<div class="drive-bar" id="driveBar">
+  <div class="drive-status" id="driveStatus">
+    <div class="drive-dot" id="driveDot"></div>
+    <span id="driveLabel">Sin conectar a Drive</span>
+  </div>
+  <button class="btn-connect" id="driveBtn" onclick="handleDriveBtn()">Conectar Drive</button>
+</div>
+
+<!-- SIGNIN OVERLAY -->
+<div class="signin-overlay" id="signinOverlay" style="display:none">
+  <div class="signin-card">
+    <h2>Conectar Google Drive</h2>
+    <p>Tus entrenamientos se guardarán automáticamente en Drive y estarán disponibles desde cualquier dispositivo.</p>
+    <button class="btn-google" onclick="signIn()">
+      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.08 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-3.59-13.46-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      Iniciar sesión con Google
+    </button>
+    <button class="btn-skip" onclick="closeOverlay()">Usar sin Drive (solo este dispositivo)</button>
+  </div>
+</div>
+
+<div class="view active" id="view-hoy">
+  <div style="font-size:13px;color:var(--muted);margin-bottom:10px;font-weight:500" id="hoy-label"></div>
+  <div class="week-scroll" id="weekScroll"></div>
+  <div id="weekInfo"></div>
+  <div id="dayCards"></div>
+</div>
+
+<div class="view" id="view-prog">
+  <div class="global-card">
+    <h2>Tu progreso</h2>
+    <div class="stat-grid">
+      <div class="stat-box"><div class="lbl">Entrenamientos</div><div class="val" id="pg-done">0</div></div>
+      <div class="stat-box"><div class="lbl">Plan completado</div><div class="val" id="pg-pct">0%</div></div>
+      <div class="stat-box"><div class="lbl">Semana actual</div><div class="val" id="pg-week">1/22</div></div>
+      <div class="stat-box"><div class="lbl">Días para la carrera</div><div class="val" id="pg-days">—</div></div>
+    </div>
+    <div class="prog-bar" style="height:8px;margin-bottom:4px"><div class="prog-fill" id="pg-bar" style="width:0%"></div></div>
+    <div style="font-size:12px;color:var(--muted);text-align:right" id="pg-label"></div>
+  </div>
+  <div class="global-card">
+    <h2>Semanas del plan</h2>
+    <div class="all-weeks" id="allWeeks"></div>
+  </div>
+</div>
+
+<div class="bottomnav">
+  <button class="bnav-btn active" onclick="showView('hoy',this)"><span class="bnav-icon">📅</span>Entrenamiento</button>
+  <button class="bnav-btn" onclick="showView('prog',this)"><span class="bnav-icon">📊</span>Progreso</button>
+</div>
+
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script>
+const CLIENT_ID='1074407639637-ivllt5mub04dakvne05lootf3k1v0edh.apps.googleusercontent.com';
+const SCOPES='https://www.googleapis.com/auth/drive.appdata';
+const FILE_NAME='maraton_sansebastian_2026.json';
+
+const PLAN=[
+  {n:1,fase:'r',label:'Vuelta al asfalto',vol:'35–40 km',note:'Sin series ni ritmos exigentes. Sentir las piernas en asfalto. Si notas molestias en el Aquiles o rodillas es normal — el asfalto activa músculos que el trail no usaba igual.',dias:[
+    {d:'Martes',tipo:'run',t:'Rodada suave',desc:'50 min Z2 · asfalto llano',nota:'Calentamiento 5 min caminando. Z2 = puedes hablar en frases completas. Rango estimado: 6:15–6:45/km.'},
+    {d:'Jueves',tipo:'quality',t:'Fartlek suave',desc:'45 min con 4×2 min ligero',nota:'15 min calentamiento Z2 → 4×(2 min Z3 + 3 min Z2) → 10 min vuelta calma. Sin presión de ritmo.'},
+    {d:'Sábado',tipo:'run',t:'Carrera media',desc:'60 min Z2 · terreno llano',nota:'Igual de tranquilo que el martes pero 10 min más. Si al terminar tienes energía de sobra, vas perfecto.'},
+    {d:'Domingo',tipo:'long',t:'Tirada larga',desc:'16 km Z2 · lleva agua',nota:'Practica la hidratación desde el km 1. Ritmo muy suave. Post-rodada: 10 min estiramientos de gemelos.'},
+  ]},
+  {n:2,fase:'r',label:'Reactivación II',vol:'38–43 km',note:'Primera progresión al final del jueves. Sin forzar aún.',dias:[
+    {d:'Martes',tipo:'run',t:'Rodada suave + fuerza',desc:'55 min Z2 + 20 min fuerza',nota:'Post-rodada: sentadilla búlgara 3×10, plancha 3×30s, elevaciones talón 3×15, clamshell 3×15, puente glúteo 3×12.'},
+    {d:'Jueves',tipo:'quality',t:'Progresión',desc:'50 min: 30 min suave + 15 min progresivo',nota:'Los últimos 15 min ve aumentando el ritmo gradualmente. Sin llegar a Z4 — termina en Z3 cómodo (~6:00/km).'},
+    {d:'Sábado',tipo:'run',t:'Carrera media',desc:'65 min Z2',nota:'Continuo, tranquilo.'},
+    {d:'Domingo',tipo:'long',t:'Tirada larga',desc:'18 km Z2',nota:'2 km más que la semana anterior. Lleva bebida isotónica o agua.'},
+  ]},
+  {n:3,fase:'b',label:'Base I',vol:'42–47 km',note:'El ritmo maratón objetivo ronda 5:50/km. En el tempo, apunta a 6:05/km.',dias:[
+    {d:'Martes',tipo:'run',t:'Rodada suave + fuerza',desc:'55 min Z2 + 20 min fuerza',nota:'Foco en técnica de la sentadilla búlgara — rodilla alineada, tronco inclinado, bajada 3 seg.'},
+    {d:'Jueves',tipo:'quality',t:'Tempo suave',desc:'55 min: 20 min a ritmo maratón +15s',nota:'Calentamiento 15 min Z2 → 20 min a ~6:05/km → vuelta calma 20 min.'},
+    {d:'Sábado',tipo:'run',t:'Carrera media',desc:'70 min Z2–Z3',nota:'Suave con algún tramo en Z3.'},
+    {d:'Domingo',tipo:'long',t:'Tirada larga',desc:'20 km Z2',nota:'Gel o avituallamiento a partir del km 14.'},
+  ]},
+  {n:4,fase:'b',label:'Base II',vol:'45–50 km',note:'Primera sesión de series. Recuperación de 90 seg entre repeticiones.',dias:[
+    {d:'Martes',tipo:'run',t:'Rodada suave + fuerza',desc:'60 min Z2 + 20 min fuerza',nota:'Puedes añadir algo de peso en la sentadilla búlgara si la técnica está asentada.'},
+    {d:'Jueves',tipo:'quality',t:'Series largas',desc:'6×1000m a ritmo 10K (~5:00–5:10/km)',nota:'Calentamiento 15 min → 6×1000m con 90s rec → enfriamiento 10 min.'},
+    {d:'Sábado',tipo:'run',t:'Carrera media',desc:'70 min con 15 min a ritmo maratón',nota:'40 min Z2 → 15 min ritmo maratón → 15 min Z2.'},
+    {d:'Domingo',tipo:'long',t:'Tirada larga',desc:'22 km Z2',nota:'Hidratación cada 20–25 min. Gel km 14.'},
+  ]},
+  {n:5,fase:'b',label:'Base III',vol:'47–52 km',note:'Semana de mayor carga hasta ahora. Duerme bien y cuida la alimentación.',dias:[
+    {d:'Martes',tipo:'run',t:'Rodada suave + fuerza',desc:'60 min Z2 + 25 min fuerza',nota:''},
+    {d:'Jueves',tipo:'quality',t:'Tempo doble',desc:'60 min: 2×15 min a ritmo maratón',nota:'10 min cal → 15 min ritmo maratón → 5 min Z2 → 15 min ritmo maratón → 15 min enfriamiento.'},
+    {d:'Sábado',tipo:'run',t:'Carrera media',desc:'75 min Z2–Z3',nota:''},
+    {d:'Domingo',tipo:'long',t:'Tirada larga',desc:'24 km Z2',nota:'Gel km 14 y km 20.'},
+  ]},
+  {n:6,fase:'x',label:'Descarga I',vol:'35–38 km',note:'Semana de descarga. Reducir un 25–30% el volumen. El cuerpo asimila aquí el trabajo anterior.',dias:[
+    {d:'Martes',tipo:'run',t:'Rodada suave',desc:'45 min Z2 · sin fuerza',nota:''},
+    {d:'Jueves',tipo:'run',t:'Rodada con aceleraciones',desc:'45 min + 4 aceleraciones de 100m',nota:''},
+    {d:'Sábado',tipo:'run',t:'Carrera media',desc:'55 min Z2',nota:''},
+    {d:'Domingo',tipo:'long',t:'Tirada larga corta',desc:'16 km muy suave',nota:'Aprovecha para revisar el calzado.'},
+  ]},
+  {n:7,fase:'b',label:'Base IV',vol:'50–55 km',note:'Vuelta con más intensidad. El long run sube a 26 km.',dias:[
+    {d:'Martes',tipo:'run',t:'Rodada suave + fuerza',desc:'65 min Z2 + 25 min fuerza',nota:''},
+    {d:'Jueves',tipo:'quality',t:'Series mixtas',desc:'3×2000m a ritmo media maratón (~5:10/km)',nota:'Calentamiento 15 min → 3×2000m con 2 min rec → enfriamiento 10 min.'},
+    {d:'Sábado',tipo:'run',t:'Carrera media con progresión',desc:'75 min con progresión final 20 min',nota:'55 min suave → 20 min progresivos (Z2 a Z3-Z4).'},
+    {d:'Domingo',tipo:'long',t:'Tirada larga',desc:'26 km Z2',nota:'Gel km 14 y km 20.'},
+  ]},
+  {n:8,fase:'b',label:'10K de test',vol:'40–44 km',note:'Multiplica tu tiempo (en min) por 2.1 para estimar el tiempo de maratón.',dias:[
+    {d:'Martes',tipo:'run',t:'Rodada suave',desc:'50 min Z2 · piernas frescas',nota:'Sin fuerza esta semana.'},
+    {d:'Jueves',tipo:'quality',t:'Activación pre-test',desc:'40 min suave + 6 strides',nota:'40 min muy suave → 6 strides de 80–100m al 80%.'},
+    {d:'Sábado',tipo:'quality',t:'10K de test',desc:'Carrera o time trial · al máximo',nota:'Calienta 15 min y corre los 10K a tu máximo nivel. Anota el tiempo exacto.'},
+    {d:'Domingo',tipo:'run',t:'Regenerativa post-test',desc:'40 min muy suave',nota:''},
+  ]},
+  {n:9,fase:'d',label:'Desarrollo I',vol:'52–57 km',note:'Entramos en el bloque más exigente. El long run roza los 28 km.',dias:[
+    {d:'Martes',tipo:'run',t:'Rodada suave + fuerza',desc:'65 min Z2 + 25 min fuerza',nota:''},
+    {d:'Jueves',tipo:'quality',t:'Tempo largo',desc:'65 min: 25 min a ritmo maratón',nota:'Calentamiento 15 min → 25 min a ritmo maratón → enfriamiento 25 min.'},
+    {d:'Sábado',tipo:'run',t:'Carrera media',desc:'80 min Z2–Z3',nota:''},
+    {d:'Domingo',tipo:'long',t:'Tirada larga',desc:'28 km Z2',nota:'Gel km 14 y km 22.'},
+  ]},
+  {n:10,fase:'d',label:'Desarrollo II',vol:'54–59 km',note:'Las series a ritmo de maratón son el entrenamiento clave de este bloque.',dias:[
+    {d:'Martes',tipo:'run',t:'Rodada suave + fuerza',desc:'65 min Z2 + 25 min fuerza',nota:''},
+    {d:'Jueves',tipo:'quality',t:'Series maratón',desc:'5×2000m a ritmo maratón objetivo',nota:'Calentamiento 15 min → 5×2000m a ~5:50/km con 2 min rec → enfriamiento 10 min.'},
+    {d:'Sábado',tipo:'run',t:'Carrera media con ritmo',desc:'80 min con 20 min a ritmo maratón',nota:'40 min Z2 → 20 min ritmo maratón → 20 min Z2.'},
+    {d:'Domingo',tipo:'long',t:'Tirada larga',desc:'29 km Z2',nota:'Gel km 14 y km 22.'},
+  ]},
+  {n:11,fase:'d',label:'Desarrollo III',vol:'55–60 km',note:'Primera tirada de 30 km. Hito importante. Lleva geles desde el km 16.',dias:[
+    {d:'Martes',tipo:'run',t:'Rodada suave + fuerza',desc:'70 min Z2 + 25 min fuerza',nota:''},
+    {d:'Jueves',tipo:'quality',t:'Tempo progresivo',desc:'70 min: 30 min a ritmo maratón',nota:'Calentamiento 15 min → 30 min a ritmo maratón → 25 min enfriamiento.'},
+    {d:'Sábado',tipo:'run',t:'Carrera media',desc:'85 min Z2–Z3',nota:''},
+    {d:'Domingo',tipo:'long',t:'Tirada larga',desc:'30 km Z2',nota:'Gel km 14, km 20 y km 26.'},
+  ]},
+  {n:12,fase:'x',label:'Descarga II',vol:'38–42 km',note:'Aprovecha para revisar el calzado de carrera y los geles. Descansa de verdad.',dias:[
+    {d:'Martes',tipo:'run',t:'Rodada suave',desc:'50 min Z2 · sin fuerza',nota:''},
+    {d:'Jueves',tipo:'quality',t:'Fartlek suave',desc:'50 min por sensaciones',nota:''},
+    {d:'Sábado',tipo:'run',t:'Carrera media corta',desc:'60 min Z2',nota:''},
+    {d:'Domingo',tipo:'long',t:'Tirada larga reducida',desc:'20 km Z2',nota:''},
+  ]},
+  {n:13,fase:'d',label:'Desarrollo IV',vol:'55–60 km',note:'Semana fuerte antes de la media maratón de test.',dias:[
+    {d:'Martes',tipo:'run',t:'Rodada suave + fuerza',desc:'70 min Z2 + 25 min fuerza',nota:''},
+    {d:'Jueves',tipo:'quality',t:'Series 1000m',desc:'8×1000m a ritmo 10K (~4:55–5:05/km)',nota:'Calentamiento 15 min → 8×1000m con 90s rec → enfriamiento 10 min.'},
+    {d:'Sábado',tipo:'run',t:'Carrera media con progresión',desc:'85 min con progresión',nota:''},
+    {d:'Domingo',tipo:'long',t:'Tirada larga',desc:'31 km Z2',nota:'Gel km 14, km 20 y km 26.'},
+  ]},
+  {n:14,fase:'e',label:'Media maratón test',vol:'45–50 km',note:'Multiplica tu tiempo (en min) por 2.15 para estimar el objetivo de maratón.',dias:[
+    {d:'Martes',tipo:'run',t:'Rodada suave',desc:'55 min Z2 · piernas frescas',nota:'Sin fuerza esta semana.'},
+    {d:'Jueves',tipo:'quality',t:'Activación pre-media',desc:'45 min suave + 6 strides',nota:''},
+    {d:'Sábado',tipo:'quality',t:'Media maratón',desc:'Carrera oficial · referencia clave',nota:'Estrategia conservadora los primeros 7 km. Anota el tiempo exacto.'},
+    {d:'Domingo',tipo:'run',t:'Regenerativa',desc:'40 min muy suave',nota:''},
+  ]},
+  {n:15,fase:'e',label:'Específico I',vol:'55–60 km',note:'Entrenas al ritmo exacto que quieres mantener el 22 de noviembre.',dias:[
+    {d:'Martes',tipo:'run',t:'Rodada suave + fuerza potencia',desc:'70 min Z2 + 25 min fuerza',nota:'Añade sentadilla con salto y step-up explosivo.'},
+    {d:'Jueves',tipo:'quality',t:'Tempo maratón',desc:'70 min: 35 min a ritmo maratón exacto',nota:''},
+    {d:'Sábado',tipo:'run',t:'Carrera media',desc:'85 min Z2–Z3',nota:''},
+    {d:'Domingo',tipo:'long',t:'Tirada larga',desc:'32 km Z2 · gel km 16 y cada 45 min',nota:'Ensaya la estrategia de nutrición que usarás el 22N.'},
+  ]},
+  {n:16,fase:'e',label:'Específico II',vol:'57–62 km',note:'El 3×5000m a ritmo maratón es el entrenamiento más exigente del plan. Tómate el viernes libre.',dias:[
+    {d:'Martes',tipo:'run',t:'Rodada suave + fuerza',desc:'70 min Z2 + 25 min fuerza',nota:''},
+    {d:'Jueves',tipo:'quality',t:'Series maratón largas',desc:'3×5000m a ritmo maratón',nota:'Calentamiento 15 min → 3×5000m a ritmo maratón con 3 min rec → enfriamiento 10 min.'},
+    {d:'Sábado',tipo:'run',t:'Carrera media con ritmo',desc:'90 min con 30 min a ritmo maratón',nota:'45 min Z2 → 30 min ritmo maratón → 15 min Z2.'},
+    {d:'Domingo',tipo:'long',t:'Tirada larga',desc:'33 km Z2',nota:''},
+  ]},
+  {n:17,fase:'e',label:'Tirada pico',vol:'58–63 km',note:'La tirada más larga del plan. Practica la nutrición exacta del 22N.',dias:[
+    {d:'Martes',tipo:'run',t:'Rodada suave + fuerza',desc:'70 min Z2 + 20 min fuerza',nota:''},
+    {d:'Jueves',tipo:'quality',t:'Tempo doble',desc:'70 min: 2×20 min a ritmo maratón',nota:'10 min cal → 20 min ritmo maratón → 10 min Z2 → 20 min ritmo maratón → 10 min enfriamiento.'},
+    {d:'Sábado',tipo:'run',t:'Carrera media',desc:'90 min Z2–Z3',nota:''},
+    {d:'Domingo',tipo:'long',t:'Tirada pico',desc:'34–35 km Z2 · ensayo general nutrición',nota:'Gel km 16, 22, 28 y 33. Misma estrategia exacta del 22N.'},
+  ]},
+  {n:18,fase:'x',label:'Descarga III',vol:'40–45 km',note:'Después de la tirada pico necesitas esta descarga. No te la saltes.',dias:[
+    {d:'Martes',tipo:'run',t:'Rodada suave',desc:'55 min Z2 · sin fuerza',nota:''},
+    {d:'Jueves',tipo:'quality',t:'Suave con ritmo',desc:'55 min + 10 min a ritmo maratón',nota:''},
+    {d:'Sábado',tipo:'run',t:'Carrera media corta',desc:'65 min Z2',nota:''},
+    {d:'Domingo',tipo:'long',t:'Tirada larga reducida',desc:'22 km Z2',nota:''},
+  ]},
+  {n:19,fase:'e',label:'Específico final',vol:'52–56 km',note:'Última semana de carga real. A partir de aquí empieza el tapering.',dias:[
+    {d:'Martes',tipo:'run',t:'Rodada suave + fuerza',desc:'65 min Z2 + 20 min fuerza',nota:'Última sesión de fuerza con carga.'},
+    {d:'Jueves',tipo:'quality',t:'Ritmo maratón',desc:'65 min: 25 min a ritmo maratón',nota:''},
+    {d:'Sábado',tipo:'run',t:'Carrera media',desc:'80 min Z2',nota:''},
+    {d:'Domingo',tipo:'long',t:'Última tirada larga',desc:'28 km Z2',nota:'A partir de aquí los long runs se reducen.'},
+  ]},
+  {n:20,fase:'t',label:'Tapering I',vol:'38–42 km',note:'Reducción del 30% de volumen. La intensidad se mantiene para no perder sensaciones.',dias:[
+    {d:'Martes',tipo:'run',t:'Rodada suave + fuerza ligera',desc:'55 min Z2 + 15 min peso corporal',nota:'Sentadilla 2×10, clamshell 2×12, puente glúteo 2×12.'},
+    {d:'Jueves',tipo:'quality',t:'Series cortas',desc:'6×800m a ritmo 10K',nota:'Calentamiento 15 min → 6×800m con 90s rec → enfriamiento 10 min.'},
+    {d:'Sábado',tipo:'run',t:'Carrera media',desc:'60 min Z2',nota:''},
+    {d:'Domingo',tipo:'long',t:'Tirada larga reducida',desc:'22 km Z2',nota:''},
+  ]},
+  {n:21,fase:'t',label:'Tapering II',vol:'28–32 km',note:'Pre-carrera. Duerme bien, come bien, no hagas nada nuevo.',dias:[
+    {d:'Martes',tipo:'run',t:'Rodada suave',desc:'45 min Z2',nota:''},
+    {d:'Jueves',tipo:'quality',t:'Activación con ritmo',desc:'40 min + 4×1000m a ritmo maratón',nota:'Calentamiento 15 min → 4×1000m a ritmo maratón → enfriamiento 10 min.'},
+    {d:'Sábado',tipo:'run',t:'Rodada muy suave',desc:'40 min muy tranquilo',nota:''},
+    {d:'Domingo',tipo:'long',t:'Tirada corta',desc:'14 km Z2 · piernas frescas',nota:''},
+  ]},
+  {n:22,fase:'t',label:'Semana de carrera',vol:'15 km + maratón',note:'Sal 15–20 seg/km más lento los primeros 10 km. La carrera se gana en el km 30.',dias:[
+    {d:'Lunes',tipo:'rest',t:'Descanso total',desc:'Solo caminar. Nada de correr.',nota:'Prepara el material: dorsal, chip, zapatillas, calcetines, geles, ropa.'},
+    {d:'Martes',tipo:'run',t:'Rodada muy suave',desc:'20 min + 4 strides',nota:''},
+    {d:'Miércoles',tipo:'rest',t:'Descanso + viaje',desc:'Viaja tranquilo, pasta por la noche',nota:''},
+    {d:'Domingo 22N',tipo:'long',t:'¡MARATÓN SAN SEBASTIÁN!',desc:'Sal conservador · disfruta cada km',nota:'Gel km 16, 22, 28 y 33. Bebe en cada avituallamiento. A partir del km 30, todo lo que has entrenado sale solo.'},
+  ]},
+];
+
+const FL={r:'Reactivación',b:'Base',d:'Desarrollo',e:'Específico',t:'Tapering',x:'Descarga'};
+const FC={r:'b-r',b:'b-b',d:'b-d',e:'b-e',t:'b-t',x:'b-x'};
+const TD={run:'dot-run',quality:'dot-quality',long:'dot-long',rest:'dot-rest'};
+
+// ── DRIVE ──────────────────────────────────────────────
+let accessToken=null;
+let driveFileId=null;
+let syncTimeout=null;
+let DB={};
+
+function setDriveUI(state,msg){
+  const dot=document.getElementById('driveDot');
+  const lbl=document.getElementById('driveLabel');
+  const btn=document.getElementById('driveBtn');
+  dot.className='drive-dot';
+  if(state==='connected'){dot.classList.add('connected');lbl.textContent=msg||'Drive conectado';btn.textContent='Desconectar';btn.className='btn-connect disconnect';}
+  else if(state==='syncing'){dot.classList.add('syncing');lbl.textContent='Guardando...';btn.textContent='Desconectar';btn.className='btn-connect disconnect';}
+  else if(state==='error'){dot.classList.add('error');lbl.textContent=msg||'Error al sincronizar';btn.textContent='Reconectar';btn.className='btn-connect';}
+  else{lbl.textContent='Sin conectar a Drive';btn.textContent='Conectar Drive';btn.className='btn-connect';}
+}
+
+function handleDriveBtn(){
+  if(accessToken){disconnectDrive();}else{document.getElementById('signinOverlay').style.display='flex';}
+}
+function closeOverlay(){document.getElementById('signinOverlay').style.display='none';}
+
+function signIn(){
+  closeOverlay();
+  const client=google.accounts.oauth2.initTokenClient({
+    client_id:CLIENT_ID,
+    scope:SCOPES,
+    callback:(resp)=>{
+      if(resp.error){setDriveUI('error','Error al conectar');return;}
+      accessToken=resp.access_token;
+      localStorage.setItem('msb26_token',accessToken);
+      setDriveUI('syncing');
+      loadFromDrive();
+    }
+  });
+  client.requestAccessToken();
+}
+
+function disconnectDrive(){
+  if(accessToken){google.accounts.oauth2.revoke(accessToken,()=>{});}
+  accessToken=null;driveFileId=null;
+  localStorage.removeItem('msb26_token');
+  setDriveUI('disconnected');
+}
+
+async function loadFromDrive(){
+  try{
+    // busca el archivo en appDataFolder
+    const res=await fetch('https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name%3D%22'+FILE_NAME+'%22&fields=files(id,name)',{
+      headers:{Authorization:'Bearer '+accessToken}
+    });
+    const data=await res.json();
+    if(data.files&&data.files.length>0){
+      driveFileId=data.files[0].id;
+      const content=await fetch('https://www.googleapis.com/drive/v3/files/'+driveFileId+'?alt=media',{
+        headers:{Authorization:'Bearer '+accessToken}
+      });
+      const json=await content.json();
+      DB=json||{};
+      // merge con localStorage por si hay datos más recientes
+      try{const local=JSON.parse(localStorage.getItem('msb26')||'{}');Object.assign(DB,local);}catch(e){}
+    } else {
+      // no existe aún, crear
+      try{DB=JSON.parse(localStorage.getItem('msb26')||'{}');}catch(e){}
+      await createDriveFile();
+    }
+    setDriveUI('connected','Drive conectado ✓');
+    renderHoy();renderProg&&renderProg();
+  }catch(e){setDriveUI('error','Error al cargar');}
+}
+
+async function createDriveFile(){
+  const meta={name:FILE_NAME,parents:['appDataFolder']};
+  const body=JSON.stringify(DB);
+  const form=new FormData();
+  form.append('metadata',new Blob([JSON.stringify(meta)],{type:'application/json'}));
+  form.append('file',new Blob([body],{type:'application/json'}));
+  const res=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',{
+    method:'POST',headers:{Authorization:'Bearer '+accessToken},body:form
+  });
+  const d=await res.json();
+  driveFileId=d.id;
+}
+
+async function saveToDrive(){
+  if(!accessToken||!driveFileId)return;
+  setDriveUI('syncing');
+  try{
+    await fetch('https://www.googleapis.com/upload/drive/v3/files/'+driveFileId+'?uploadType=media',{
+      method:'PATCH',
+      headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},
+      body:JSON.stringify(DB)
+    });
+    setDriveUI('connected','Drive conectado ✓');
+  }catch(e){setDriveUI('error','Error al guardar');}
+}
+
+function scheduleSave(){
+  clearTimeout(syncTimeout);
+  syncTimeout=setTimeout(()=>{
+    localStorage.setItem('msb26',JSON.stringify(DB));
+    if(accessToken)saveToDrive();
+  },1500);
+}
+
+// ── LOCAL DATA ─────────────────────────────────────────
+function loadLocal(){try{const s=localStorage.getItem('msb26');if(s)DB=JSON.parse(s);}catch(e){}}
+function gl(w,i){return DB['w'+w+'d'+i]||{};}
+function sl(w,i,o){DB['w'+w+'d'+i]={...gl(w,i),...o};scheduleSave();}
+
+function currentWeek(){
+  const start=new Date('2026-06-16');
+  const diff=Math.floor((new Date()-start)/86400000);
+  return Math.max(1,Math.min(22,Math.floor(diff/7)+1));
+}
+function weekDone(n){return PLAN[n-1].dias.filter((_,i)=>gl(n,i).done).length;}
+function totalDone(){return PLAN.reduce((a,w)=>a+weekDone(w.n),0);}
+function totalDays(){return PLAN.reduce((a,w)=>a+w.dias.length,0);}
+
+function countdown(){
+  const diff=Math.ceil((new Date('2026-11-22')-new Date())/86400000);
+  document.getElementById('cdnum').textContent=diff>0?diff:'¡Hoy!';
+  const el=document.getElementById('pg-days');if(el)el.textContent=diff>0?diff:'¡Hoy!';
+}
+
+let selWeek=currentWeek();
+
+function renderHoy(){
+  const today=new Date().toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'});
+  document.getElementById('hoy-label').textContent=today.charAt(0).toUpperCase()+today.slice(1)+' · Semana '+selWeek;
+
+  const scroll=document.getElementById('weekScroll');
+  scroll.innerHTML=PLAN.map(w=>{
+    const done=weekDone(w.n)===w.dias.length&&w.dias.length>0;
+    return `<div class="week-pill${selWeek===w.n?' active':done?' done':''}" onclick="selWeek=${w.n};renderHoy()">${w.n===selWeek?'S'+w.n+' — '+w.label:'S'+w.n}</div>`;
+  }).join('');
+  setTimeout(()=>{const a=scroll.querySelector('.week-pill.active');if(a)a.scrollIntoView({inline:'center',behavior:'smooth'});},50);
+
+  const w=PLAN[selWeek-1];
+  const done=weekDone(selWeek);
+  const total=w.dias.length;
+  const pct=Math.round(done/total*100);
+  const start=new Date('2026-06-16');
+  const ws=new Date(start.getTime()+(selWeek-1)*7*86400000);
+  const dateStr=ws.toLocaleDateString('es-ES',{day:'numeric',month:'long'});
+
+  document.getElementById('weekInfo').innerHTML=`
+    <div class="week-info">
+      <div class="week-info-top">
+        <div><div class="week-info-title">S${w.n} · ${w.label}</div><div class="week-info-meta">${dateStr} · ${w.vol}</div></div>
+        <span class="badge ${FC[w.fase]}">${FL[w.fase]}</span>
+      </div>
+      <div class="week-progress">
+        <div class="prog-row"><span>${done} de ${total} entrenamientos</span><span>${pct}%</span></div>
+        <div class="prog-bar"><div class="prog-fill" style="width:${pct}%"></div></div>
+      </div>
+      ${w.note?`<div class="week-note">${w.note}</div>`:''}
+    </div>`;
+
+  document.getElementById('dayCards').innerHTML=w.dias.map((dia,i)=>{
+    const log=gl(selWeek,i);
+    const isDone=!!log.done;
+    return `<div class="day-card${isDone?' done-card':''}" id="dc${selWeek}_${i}">
+      <div class="day-head" onclick="toggleDay(${selWeek},${i})">
+        <div class="day-dot ${TD[dia.tipo]||'dot-rest'}"></div>
+        <div class="day-text">
+          <div class="day-dow">${dia.d}</div>
+          <div class="day-title">${dia.t}</div>
+          <div class="day-desc">${dia.desc}</div>
+        </div>
+        <div class="day-right">
+          ${isDone&&(log.tiempo||log.pulsaciones)?`<div class="day-preview">${log.tiempo||''}${log.pulsaciones?'<br>'+log.pulsaciones+' ppm':''}</div>`:''}
+          <div class="check-btn${isDone?' done':''}" onclick="event.stopPropagation();toggleDone(${selWeek},${i})">${isDone?'✓':''}</div>
+        </div>
+      </div>
+      <div class="day-body${log.open?' open':''}" id="db${selWeek}_${i}">
+        ${dia.nota?`<div class="day-nota">${dia.nota}</div>`:''}
+        ${dia.tipo!=='rest'?`
+        <div class="log-section">
+          <div class="log-field"><label>Tiempo</label><input id="t_${selWeek}_${i}" type="text" inputmode="numeric" placeholder="52:30" value="${log.tiempo||''}" onchange="sl(${selWeek},${i},'tiempo',this.value)"></div>
+          <div class="log-field"><label>Pulsaciones</label><input id="p_${selWeek}_${i}" type="number" inputmode="numeric" placeholder="145 ppm" value="${log.pulsaciones||''}" onchange="sl(${selWeek},${i},'pulsaciones',this.value)"></div>
+          <div class="log-field full"><label>Distancia (km)</label><input id="km_${selWeek}_${i}" type="number" inputmode="decimal" step="0.1" placeholder="10.5" value="${log.km||''}" onchange="sl(${selWeek},${i},'km',this.value)"></div>
+        </div>
+        <div class="notes-field"><label>Notas / sensaciones</label>
+          <textarea id="n_${selWeek}_${i}" placeholder="¿Cómo te has sentido? ¿Alguna molestia?" onchange="sl(${selWeek},${i},'notas',this.value)">${log.notas||''}</textarea>
+        </div>`:''}
+        <button class="btn-guardar${isDone?' saved':''}" onclick="markDone(${selWeek},${i})">${isDone?'✓ Completado':'Marcar como completado'}</button>
+        ${isDone?`<div class="log-resumen">Completado${log.tiempo?' en '+log.tiempo:''}${log.pulsaciones?' · '+log.pulsaciones+' ppm':''}${log.km?' · '+parseFloat(log.km).toFixed(1)+' km':''}${log.notas?'<br>"'+log.notas.substring(0,100)+'"':''}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderProg(){
+  const td=totalDone(),tt=totalDays(),pct=Math.round(td/tt*100),cw=currentWeek();
+  document.getElementById('pg-done').textContent=td+'/'+tt;
+  document.getElementById('pg-pct').textContent=pct+'%';
+  document.getElementById('pg-week').textContent=cw+'/22';
+  document.getElementById('pg-bar').style.width=pct+'%';
+  document.getElementById('pg-label').textContent=td+' de '+tt+' entrenamientos completados';
+  countdown();
+  document.getElementById('allWeeks').innerHTML=PLAN.map(w=>{
+    const done=weekDone(w.n),total=w.dias.length,p=Math.round(done/total*100);
+    return `<div class="aw-row" onclick="selWeek=${w.n};showView('hoy',document.querySelectorAll('.bnav-btn')[0])">
+      <div class="aw-num">Sem ${w.n}</div>
+      <div class="aw-name">${w.label}<br><span style="font-size:11px;color:var(--muted);font-weight:400">${FL[w.fase]} · ${w.vol}</span></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="ph-bar"><div class="ph-fill" style="width:${p}%"></div></div>
+        <div class="aw-check">${done===total&&total>0?'✓':done>0?done+'/'+total:''}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleDay(wn,i){
+  const log=gl(wn,i);sl(wn,i,{open:!log.open});
+  const b=document.getElementById('db'+wn+'_'+i);if(b)b.classList.toggle('open');
+}
+function toggleDone(wn,i){sl(wn,i,{done:!gl(wn,i).done});renderHoy();}
+function markDone(wn,i){
+  // capture all field values from the form before saving
+  const tiempo=document.getElementById('t_'+wn+'_'+i);
+  const puls=document.getElementById('p_'+wn+'_'+i);
+  const km=document.getElementById('km_'+wn+'_'+i);
+  const notas=document.getElementById('n_'+wn+'_'+i);
+  const update={done:true};
+  if(tiempo&&tiempo.value)update.tiempo=tiempo.value;
+  if(puls&&puls.value)update.pulsaciones=puls.value;
+  if(km&&km.value)update.km=km.value;
+  if(notas&&notas.value)update.notas=notas.value;
+  sl(wn,i,update);
+  renderHoy();
+}
+
+function showView(name,btn){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.bnav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  btn.classList.add('active');
+  if(name==='prog')renderProg();
+  if(name==='hoy')renderHoy();
+}
+
+// ── INIT ───────────────────────────────────────────────
+loadLocal();
+countdown();
+setInterval(countdown,60000);
+renderHoy();
+
+// intenta reconectar si había token previo
+window.addEventListener('load',()=>{
+  const saved=localStorage.getItem('msb26_token');
+  if(saved){
+    accessToken=saved;
+    setDriveUI('syncing');
+    loadFromDrive();
+  } else {
+    // mostrar overlay la primera vez
+    if(!localStorage.getItem('msb26_seen')){
+      localStorage.setItem('msb26_seen','1');
+      setTimeout(()=>document.getElementById('signinOverlay').style.display='flex',800);
+    }
+  }
+});
+</script>
+</body>
+</html>
